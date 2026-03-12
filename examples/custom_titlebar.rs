@@ -1,8 +1,9 @@
 //! Example: custom titlebar with decorations disabled.
 //! Run with: cargo run --example custom_titlebar
 
-use iced::widget::{column, container, text};
-use iced::{Alignment, Element, Length, Subscription, Task};
+use iced::widget::container;
+use iced::widget::{column, container as container_widget, text};
+use iced::{Alignment, Color, Element, Length, Subscription, Task};
 
 use iced_custom_titlebar::{resize_handles, titlebar, TitlebarMessage};
 
@@ -57,7 +58,7 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
 
 fn view(_state: &State) -> Element<'_, Message> {
     let bar = titlebar("Custom Titlebar Demo", Message::Titlebar);
-    let content = container(
+    let content = container_widget(
         text("Custom titlebar — drag the bar, use the buttons. Resize from edges and corners.")
             .size(16),
     )
@@ -72,5 +73,17 @@ fn view(_state: &State) -> Element<'_, Message> {
         .height(Length::Fill)
         .align_x(Alignment::Center);
 
-    resize_handles(inner, Message::Resize).into()
+    let with_handles = resize_handles(inner, Message::Resize);
+
+    container_widget(with_handles)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .style(|_theme| {
+            container::Style::default().border(
+                iced::Border::default()
+                    .width(1.0)
+                    .color(Color::from_rgb8(160, 160, 160)),
+            )
+        })
+        .into()
 }

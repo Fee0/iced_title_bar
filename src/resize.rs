@@ -3,8 +3,20 @@
 //! When window decorations are disabled, use these handles so the user can resize by dragging
 //! the four edges (North, South, East, West) and four corners (NorthWest, NorthEast, SouthWest, SouthEast).
 
+use iced::mouse::Interaction;
 use iced::widget::{container, mouse_area, row, column, text};
 use iced::{Element, Length};
+
+/// Returns the resize cursor for the given edge/corner direction.
+fn cursor_for(direction: iced::window::Direction) -> Interaction {
+    use iced::window::Direction;
+    match direction {
+        Direction::North | Direction::South => Interaction::ResizingVertically,
+        Direction::East | Direction::West => Interaction::ResizingHorizontally,
+        Direction::NorthEast | Direction::SouthWest => Interaction::ResizingDiagonallyUp,
+        Direction::NorthWest | Direction::SouthEast => Interaction::ResizingDiagonallyDown,
+    }
+}
 
 /// Width or height of edge resize strips in pixels.
 pub const RESIZE_EDGE_SIZE: f32 = 5.0;
@@ -37,6 +49,7 @@ where
                     .width(Length::Fill)
                     .height(Length::Fill),
             )
+            .interaction(cursor_for(direction))
             .on_press(to_message(direction)),
         )
         .width(width)
