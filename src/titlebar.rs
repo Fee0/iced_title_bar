@@ -13,7 +13,7 @@ pub enum TitlebarMessage {
     StartDrag,
     /// User clicked minimize — run `window::minimize(window_id, true)`.
     Minimize,
-    /// User clicked maximize/restore — run `window::toggle_maximize(window_id)`.
+    /// User clicked maximize/restore or double-clicked the title bar — run `window::toggle_maximize(window_id)`.
     ToggleMaximize,
     /// User clicked close — run `window::close(window_id)`.
     Close,
@@ -22,15 +22,17 @@ pub enum TitlebarMessage {
 /// Default height of the titlebar in pixels.
 pub const DEFAULT_TITLEBAR_HEIGHT: f32 = 32.0;
 
-/// Builds a custom titlebar row: draggable title area + minimize, maximize, close buttons.
+/// Builds a custom titlebar row: draggable title area (full width except buttons) + minimize, maximize, close buttons.
 ///
-/// * `title` — Text shown in the title area (draggable region).
+/// The entire bar except the three buttons is draggable. Double-clicking the title area toggles maximize/restore.
+///
+/// * `title` — Text shown centered in the title area.
 /// * `to_message` — Converts [TitlebarMessage] into your app's `Message` (e.g. `Message::Titlebar`).
 ///
 /// In your update, handle the titlebar message and return the matching task:
 /// * `StartDrag` → `window::drag(window_id)`
 /// * `Minimize` → `window::minimize(window_id, true)`
-/// * `ToggleMaximize` → `window::toggle_maximize(window_id)`
+/// * `ToggleMaximize` → `window::toggle_maximize(window_id)` (button or double-click on bar)
 /// * `Close` → `window::close(window_id)`
 pub fn titlebar<'a, Message>(
     title: impl ToString,
@@ -44,9 +46,13 @@ where
         mouse_area(
             container(text(title_str).size(14))
                 .padding(iced::Padding::from([8, 12]))
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .center_x(Length::Fill)
                 .center_y(Length::Fill),
         )
-        .on_press(to_message(TitlebarMessage::StartDrag)),
+        .on_press(to_message(TitlebarMessage::StartDrag))
+        .on_double_click(to_message(TitlebarMessage::ToggleMaximize)),
     )
     .width(Length::Fill)
     .height(Length::Fill);
