@@ -9,8 +9,8 @@
 //! ```ignore
 //! use iced_custom_titlebar::{titlebar, TitlebarMessage};
 //!
-//! // In your view (builder style, like other iced widgets):
-//! let bar = titlebar("My App").on_message(Message::Titlebar).into();
+//! // In your view (builder style, like other iced widgets). Pass current maximized state so the middle button shows the correct icon:
+//! let bar = titlebar("My App").maximized(is_maximized).on_message(Message::Titlebar).into();
 //!
 //! // In your update (with window_id from state, e.g. stored from window::open_events()):
 //! Message::Titlebar(TitlebarMessage::StartDrag) => window::drag(window_id),

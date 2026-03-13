@@ -27,6 +27,7 @@ struct State {
     resize_edge: f32,
     title_alignment: TitleAlignment,
     style_preset: TitlebarStylePreset,
+    is_maximized: bool,
 }
 
 impl Default for State {
@@ -38,6 +39,7 @@ impl Default for State {
             resize_edge: 1.0,
             title_alignment: TitleAlignment::default(),
             style_preset: TitlebarStylePreset::default(),
+            is_maximized: false,
         }
     }
 }
@@ -76,6 +78,7 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
                     iced::window::minimize::<()>(window_id, true).discard::<Message>()
                 }
                 TitlebarMessage::ToggleMaximize => {
+                    state.is_maximized = !state.is_maximized;
                     iced::window::toggle_maximize::<()>(window_id).discard::<Message>()
                 }
                 TitlebarMessage::Close => iced::window::close::<()>(window_id).discard::<Message>(),
@@ -179,6 +182,7 @@ fn view(state: &State) -> Element<'_, Message> {
         .height(state.height)
         .resize_edge(state.resize_edge)
         .title_alignment(state.title_alignment)
+        .maximized(state.is_maximized)
         .style(style)
         .with_content(config_panel, Message::Resize);
 
