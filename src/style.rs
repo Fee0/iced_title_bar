@@ -19,6 +19,16 @@ pub enum TitleAlignment {
     Right,
 }
 
+impl std::fmt::Display for TitleAlignment {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TitleAlignment::Left => write!(f, "Left"),
+            TitleAlignment::Center => write!(f, "Center"),
+            TitleAlignment::Right => write!(f, "Right"),
+        }
+    }
+}
+
 /// Style for the titlebar and its buttons: bar and border colors, button hover colors, icon color, title alignment.
 ///
 /// - `bar`: Background of the whole titlebar and default background of all three buttons.
