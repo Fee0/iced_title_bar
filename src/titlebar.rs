@@ -29,16 +29,18 @@ pub const DEFAULT_TITLEBAR_HEIGHT: f32 = 32.0;
 /// Custom titlebar widget: draggable title area + minimize, maximize, close buttons.
 ///
 /// Build with [titlebar](titlebar)(title), then chain [on_message](Titlebar::on_message), [style](Titlebar::style), [height](Titlebar::height),
-/// [title_alignment](Titlebar::title_alignment), [resize_edge](Titlebar::resize_edge). Call [.into()](Into::into) to get an `Element`,
+/// [border_width](Titlebar::border_width), [title_alignment](Titlebar::title_alignment), [resize_edge](Titlebar::resize_edge). Call [.into()](Into::into) to get an `Element`,
 /// or [with_content](Titlebar::with_content) to stack the bar with content and wrap everything in resize handles.
 /// You must call [on_message](Titlebar::on_message) for the bar to be interactive.
 pub struct Titlebar<'a, Message> {
     /// Title text shown in the draggable area.
     pub title: String,
-    /// Visual style (bar/button colors, border, icon color, title alignment).
+    /// Visual style (bar/button colors, border color, icon color, title alignment).
     pub style: style::TitlebarStyle,
     /// Height of the bar in pixels.
     pub height: f32,
+    /// Width of the titlebar container border in pixels. 0 means no border.
+    pub border_width: f32,
     /// Optional resize edge thickness (in pixels) for integrated resize handles.
     /// When None, the default [RESIZE_EDGE_SIZE] is used.
     pub resize_edge_size: Option<f32>,
@@ -52,6 +54,7 @@ impl<'a, Message> std::fmt::Debug for Titlebar<'a, Message> {
             .field("title", &self.title)
             .field("style", &self.style)
             .field("height", &self.height)
+            .field("border_width", &self.border_width)
             .field("on_message", &self.on_message.is_some())
             .finish()
     }
@@ -71,6 +74,7 @@ pub fn titlebar<Message>(title: impl ToString) -> Titlebar<'static, Message> {
         title: title.to_string(),
         style: style::TitlebarStyle::default(),
         height: DEFAULT_TITLEBAR_HEIGHT,
+        border_width: 0.0,
         resize_edge_size: None,
         on_message: None,
     }
@@ -86,6 +90,7 @@ impl<'a, Message> Titlebar<'a, Message> {
             title: self.title,
             style: self.style,
             height: self.height,
+            border_width: self.border_width,
             resize_edge_size: self.resize_edge_size,
             on_message: Some(Box::new(f)),
         }
@@ -100,6 +105,12 @@ impl<'a, Message> Titlebar<'a, Message> {
     /// Sets the height of the titlebar in pixels.
     pub fn height(mut self, h: f32) -> Self {
         self.height = h;
+        self
+    }
+
+    /// Sets the width of the titlebar container border in pixels. 0 means no border.
+    pub fn border_width(mut self, w: f32) -> Self {
+        self.border_width = w.max(0.0);
         self
     }
 
@@ -125,7 +136,7 @@ where
         let to_message = value.on_message.expect(
             "titlebar: on_message must be set before converting to Element (e.g. titlebar(\"App\").on_message(Message::Titlebar).into())",
         );
-        build_titlebar_element(value.title, value.style, value.height, to_message)
+        build_titlebar_element(value.title, value.style, value.height, value.border_width, to_message)
     }
 }
 
@@ -159,6 +170,7 @@ fn build_titlebar_element<'a, Message>(
     title_str: String,
     style: style::TitlebarStyle,
     height: f32,
+    border_width: f32,
     to_message: Box<dyn Fn(TitlebarMessage) -> Message + 'a>,
 ) -> Element<'a, Message>
 where
@@ -224,8 +236,9 @@ where
         .height(height)
         .align_y(Alignment::Center);
 
+    let bar_border_width = border_width;
     container(row)
-        .style(move |_theme| style::bar_container_style(&s_bar))
+        .style(move |_theme| style::bar_container_style(&s_bar, bar_border_width))
         .height(height)
         .width(Length::Fill)
         .into()
@@ -246,6 +259,7 @@ where
         title.to_string(),
         style,
         DEFAULT_TITLEBAR_HEIGHT,
+        0.0,
         Box::new(to_message),
     )
 }

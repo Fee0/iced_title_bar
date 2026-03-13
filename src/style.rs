@@ -25,8 +25,7 @@ pub enum TitleAlignment {
 /// - `button_hover`: Hover/pressed background for minimize and maximize buttons.
 /// - `close_hover`: Hover/pressed background for the close button (typically red).
 /// - `icon`: Color used for the SVG window-control icons (minimize, maximize, close) and any button text. SVGs use `currentColor` so they inherit this.
-/// - `border_color`: Color of the titlebar container border (when `border_width` > 0).
-/// - `border_width`: Width of the titlebar container border; 0 means no border.
+/// - `border_color`: Color of the titlebar container border (when border width > 0).
 /// - `title_alignment`: Placement of the title text in the draggable area (left, center, right).
 #[derive(Debug, Clone, Copy)]
 pub struct TitlebarStyle {
@@ -38,10 +37,8 @@ pub struct TitlebarStyle {
     pub close_hover: Color,
     /// Color for the SVG icons (minimize, maximize, close) and button text. SVGs use `currentColor` so they inherit this.
     pub icon: Color,
-    /// Color of the titlebar container border. Used when `border_width` > 0.
+    /// Color of the titlebar container border. Used when border width > 0 (width is set on [Titlebar](crate::titlebar::Titlebar) via [border_width](crate::titlebar::Titlebar::border_width)).
     pub border_color: Color,
-    /// Width of the titlebar container border. Default 0 (borderless).
-    pub border_width: f32,
     /// Placement of the title text inside the titlebar: left, center, or right.
     pub title_alignment: TitleAlignment,
 }
@@ -49,24 +46,24 @@ pub struct TitlebarStyle {
 impl Default for TitlebarStyle {
     fn default() -> Self {
         Self {
-            bar: Color::from_rgb8(30, 30, 30),
+            bar: Color::from_rgb8(0, 0, 0),
             button_hover: Color::from_rgb8(60, 60, 60),
             close_hover: Color::from_rgb8(232, 17, 35),
             icon: Color::from_rgb8(240, 240, 240),
-            border_color: Color::from_rgb8(160, 160, 160),
-            border_width: 0.0,
+            border_color: Color::from_rgb8(49, 51, 53),
             title_alignment: TitleAlignment::default(),
         }
     }
 }
 
 /// Returns the container style for the titlebar (background and optional border).
-pub fn bar_container_style(style: &TitlebarStyle) -> container::Style {
+/// `border_width` is provided by the [Titlebar] widget, not the style.
+pub fn bar_container_style(style: &TitlebarStyle, border_width: f32) -> container::Style {
     container::Style::default()
         .background(iced::Background::Color(style.bar))
         .border(
             iced::Border::default()
-                .width(style.border_width)
+                .width(border_width)
                 .color(style.border_color),
         )
 }
