@@ -82,16 +82,16 @@ impl TitlebarStyle {
     pub fn preset(preset: TitlebarStylePreset) -> Self {
         match preset {
             TitlebarStylePreset::Dark => TitlebarStyle {
-                bar: Color::from_rgb8(30, 30, 30),
+                bar: Color::from_rgb8(0, 0, 0),
                 button_hover: Color::from_rgb8(60, 60, 60),
                 close_hover: Color::from_rgb8(232, 17, 35),
-                icon: Color::from_rgb8(240, 240, 240),
+                icon: Color::from_rgb8(255, 255, 255),
             },
             TitlebarStylePreset::Light => TitlebarStyle {
-                bar: Color::from_rgb8(240, 240, 240),
+                bar: Color::from_rgb8(255, 255, 255),
                 button_hover: Color::from_rgb8(220, 220, 220),
                 close_hover: Color::from_rgb8(232, 17, 35),
-                icon: Color::from_rgb8(40, 40, 40),
+                icon: Color::from_rgb8(0, 0, 0),
             },
         }
     }
