@@ -26,6 +26,8 @@ pub enum TitlebarMessage {
 /// Default height of the titlebar in pixels.
 pub const DEFAULT_TITLEBAR_HEIGHT: f32 = 29.0;
 
+pub const DEFAULT_ICON_WIDTH: f32 = 45.0;
+
 /// Custom titlebar widget: draggable title area + minimize, maximize, close buttons.
 ///
 /// Build with [titlebar](titlebar)(title), then chain [on_message](Titlebar::on_message), [style](Titlebar::style), [height](Titlebar::height),
@@ -243,26 +245,22 @@ where
     let min_btn = button(min_icon)
         .on_press(to_message(TitlebarMessage::Minimize))
         .style(move |theme, status| style::min_max_button_style(&s_min, theme, status))
-        .padding(4)
-        .width(45)
+        .width(DEFAULT_ICON_WIDTH)
         .height(Length::Fill);
 
     let max_btn = button(max_icon)
         .on_press(to_message(TitlebarMessage::ToggleMaximize))
         .style(move |theme, status| style::min_max_button_style(&s_max, theme, status))
-        .padding(4)
-        .width(45)
+        .width(DEFAULT_ICON_WIDTH)
         .height(Length::Fill);
 
     let close_btn = button(close_icon)
         .on_press(to_message(TitlebarMessage::Close))
         .style(move |theme, status| style::close_button_style(&s_close, theme, status))
-        .padding(4)
-        .width(45)
+        .width(DEFAULT_ICON_WIDTH)
         .height(Length::Fill);
 
     let row = row![draggable, min_btn, max_btn, close_btn]
-        .spacing(0)
         .height(height)
         .align_y(Alignment::Center);
 
