@@ -2,9 +2,9 @@
 //!
 //! Emits [TitlebarMessage] that the app maps to [iced::window] tasks in its update function.
 
-use crate::style;
+use crate::style::{self, TitleAlignment};
 use iced::widget::{button, container, mouse_area, row, svg, text};
-use iced::{Element, Length};
+use iced::{Alignment, Element, Length};
 use iced::widget::svg::Handle as SvgHandle;
 
 /// Messages emitted by the custom titlebar widget.
@@ -24,34 +24,114 @@ pub enum TitlebarMessage {
 /// Default height of the titlebar in pixels.
 pub const DEFAULT_TITLEBAR_HEIGHT: f32 = 32.0;
 
-/// Builds a custom titlebar row: draggable title area (full width except buttons) + minimize, maximize, close buttons.
+/// Custom titlebar widget: draggable title area + minimize, maximize, close buttons.
 ///
-/// The entire bar except the three buttons is draggable. Double-clicking the title area toggles maximize/restore.
+/// Build with [titlebar](titlebar)(title), then chain [on_message](Titlebar::on_message), [style](Titlebar::style), [height](Titlebar::height), [title_alignment](Titlebar::title_alignment). Call [.into()](Into::into) to get an `Element`. You must call [on_message](Titlebar::on_message) for the bar to be interactive.
+pub struct Titlebar<'a, Message> {
+    /// Title text shown in the draggable area.
+    pub title: String,
+    /// Visual style (bar/button colors, border, icon color, title alignment).
+    pub style: style::TitlebarStyle,
+    /// Height of the bar in pixels.
+    pub height: f32,
+    /// Callback to convert [TitlebarMessage] into your app's `Message`. Required for interaction.
+    pub on_message: Option<Box<dyn Fn(TitlebarMessage) -> Message + 'a>>,
+}
+
+impl<'a, Message> std::fmt::Debug for Titlebar<'a, Message> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Titlebar")
+            .field("title", &self.title)
+            .field("style", &self.style)
+            .field("height", &self.height)
+            .field("on_message", &self.on_message.is_some())
+            .finish()
+    }
+}
+
+/// Creates a new [Titlebar] with the given title and default style/height. Call [.on_message()](Titlebar::on_message) and then [.into()](Into::into) to build the element.
 ///
-/// * `title` — Text shown centered in the title area.
-/// * `to_message` — Converts [TitlebarMessage] into your app's `Message` (e.g. `Message::Titlebar`).
+/// # Example
 ///
-/// In your update, handle the titlebar message and return the matching task:
-/// * `StartDrag` → `window::drag(window_id)`
-/// * `Minimize` → `window::minimize(window_id, true)`
-/// * `ToggleMaximize` → `window::toggle_maximize(window_id)` (button or double-click on bar)
-/// * `Close` → `window::close(window_id)`
-pub fn titlebar<'a, Message>(
-    title: impl ToString,
-    to_message: impl Fn(TitlebarMessage) -> Message + 'a,
+/// ```
+/// # use iced_custom_titlebar::{titlebar, TitlebarMessage};
+/// # enum Message { Titlebar(TitlebarMessage) }
+/// let bar = titlebar("My App").on_message(Message::Titlebar).into();
+/// ```
+pub fn titlebar<Message>(title: impl ToString) -> Titlebar<'static, Message> {
+    Titlebar {
+        title: title.to_string(),
+        style: style::TitlebarStyle::default(),
+        height: DEFAULT_TITLEBAR_HEIGHT,
+        on_message: None,
+    }
+}
+
+impl<'a, Message> Titlebar<'a, Message> {
+    /// Sets the callback that maps [TitlebarMessage] to your app's `Message`. Required for drag/button interaction.
+    pub fn on_message<'b, F>(self, f: F) -> Titlebar<'b, Message>
+    where
+        F: Fn(TitlebarMessage) -> Message + 'b,
+    {
+        Titlebar {
+            title: self.title,
+            style: self.style,
+            height: self.height,
+            on_message: Some(Box::new(f)),
+        }
+    }
+
+    /// Sets the full [TitlebarStyle] (bar/button colors, border, icon color, title alignment).
+    pub fn style(mut self, s: style::TitlebarStyle) -> Self {
+        self.style = s;
+        self
+    }
+
+    /// Sets the height of the titlebar in pixels.
+    pub fn height(mut self, h: f32) -> Self {
+        self.height = h;
+        self
+    }
+
+    /// Sets the horizontal alignment of the title text (left, center, right).
+    pub fn title_alignment(mut self, a: TitleAlignment) -> Self {
+        self.style.title_alignment = a;
+        self
+    }
+}
+
+impl<'a, Message> From<Titlebar<'a, Message>> for Element<'a, Message>
+where
+    Message: Clone + 'a + 'static,
+{
+    fn from(value: Titlebar<'a, Message>) -> Self {
+        let to_message = value.on_message.expect(
+            "titlebar: on_message must be set before converting to Element (e.g. titlebar(\"App\").on_message(Message::Titlebar).into())",
+        );
+        build_titlebar_element(value.title, value.style, value.height, to_message)
+    }
+}
+
+/// Builds a custom titlebar element. Used by [From] and [titlebar_with_style].
+fn build_titlebar_element<'a, Message>(
+    title_str: String,
+    style: style::TitlebarStyle,
+    height: f32,
+    to_message: Box<dyn Fn(TitlebarMessage) -> Message + 'a>,
 ) -> Element<'a, Message>
 where
     Message: Clone + 'a + 'static,
 {
-    let title_str = title.to_string();
+    let title_align = to_iced_alignment(style.title_alignment);
+
     let draggable = container(
         mouse_area(
             container(text(title_str).size(14))
                 .padding(iced::Padding::from([8, 12]))
                 .width(Length::Fill)
                 .height(Length::Fill)
-                .center_x(Length::Fill)
-                .center_y(Length::Fill),
+                .align_x(title_align)
+                .align_y(Alignment::Center),
         )
         .on_press(to_message(TitlebarMessage::StartDrag))
         .on_double_click(to_message(TitlebarMessage::ToggleMaximize)),
@@ -71,42 +151,73 @@ where
         .width(14)
         .height(14);
 
+    let s_min = style;
+    let s_max = style;
+    let s_close = style;
+    let s_bar = style;
+
     let min_btn = button(min_icon)
         .on_press(to_message(TitlebarMessage::Minimize))
-        .style(|theme, status| style::min_max_button_style(&style::TitlebarStyle::default(), theme, status))
+        .style(move |theme, status| style::min_max_button_style(&s_min, theme, status))
         .padding(4)
         .width(46)
         .height(Length::Fill);
 
     let max_btn = button(max_icon)
         .on_press(to_message(TitlebarMessage::ToggleMaximize))
-        .style(|theme, status| style::min_max_button_style(&style::TitlebarStyle::default(), theme, status))
+        .style(move |theme, status| style::min_max_button_style(&s_max, theme, status))
         .padding(4)
         .width(46)
         .height(Length::Fill);
 
     let close_btn = button(close_icon)
         .on_press(to_message(TitlebarMessage::Close))
-        .style(|theme, status| style::close_button_style(&style::TitlebarStyle::default(), theme, status))
+        .style(move |theme, status| style::close_button_style(&s_close, theme, status))
         .padding(4)
         .width(46)
         .height(Length::Fill);
 
     let row = row![draggable, min_btn, max_btn, close_btn]
         .spacing(0)
-        .height(DEFAULT_TITLEBAR_HEIGHT)
-        .align_y(iced::Alignment::Center);
+        .height(height)
+        .align_y(Alignment::Center);
 
     container(row)
-        .style(|_theme| style::bar_container_style(&style::TitlebarStyle::default()))
-        .height(DEFAULT_TITLEBAR_HEIGHT)
+        .style(move |_theme| style::bar_container_style(&s_bar))
+        .height(height)
         .width(Length::Fill)
         .into()
 }
 
+/// Builds a custom titlebar with the given style (convenience wrapper around the builder).
+///
+/// Prefer the builder form: `titlebar(title).style(style).on_message(to_message).into()`.
+pub fn titlebar_with_style<'a, Message>(
+    title: impl ToString,
+    to_message: impl Fn(TitlebarMessage) -> Message + 'a,
+    style: style::TitlebarStyle,
+) -> Element<'a, Message>
+where
+    Message: Clone + 'a + 'static,
+{
+    build_titlebar_element(
+        title.to_string(),
+        style,
+        DEFAULT_TITLEBAR_HEIGHT,
+        Box::new(to_message),
+    )
+}
+
+fn to_iced_alignment(a: TitleAlignment) -> Alignment {
+    match a {
+        TitleAlignment::Left => Alignment::Start,
+        TitleAlignment::Center => Alignment::Center,
+        TitleAlignment::Right => Alignment::End,
+    }
+}
+
 /// SVG handle for the minimize icon: a single horizontal line.
 fn minimize_handle() -> SvgHandle {
-    // 10x10 viewBox with a centered horizontal line
     const MINIMIZE_SVG: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
   <line x1="2" y1="5" x2="8" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
 </svg>"#;
@@ -130,4 +241,3 @@ fn close_handle() -> SvgHandle {
 </svg>"#;
     SvgHandle::from_memory(CLOSE_SVG.as_bytes().to_vec())
 }
-

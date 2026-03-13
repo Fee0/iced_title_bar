@@ -57,7 +57,8 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
 }
 
 fn view(_state: &State) -> Element<'_, Message> {
-    let bar = titlebar("Custom Titlebar Demo", Message::Titlebar);
+    let bar: Element<'_, Message> =
+        titlebar("Custom Titlebar Demo").on_message(Message::Titlebar).into();
     let content = container_widget(
         text("Custom titlebar — drag the bar, use the buttons. Resize from edges and corners.")
             .size(16),

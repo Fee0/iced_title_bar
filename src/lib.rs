@@ -9,8 +9,8 @@
 //! ```ignore
 //! use iced_custom_titlebar::{titlebar, TitlebarMessage};
 //!
-//! // In your view:
-//! let bar = titlebar("My App", Message::Titlebar);
+//! // In your view (builder style, like other iced widgets):
+//! let bar = titlebar("My App").on_message(Message::Titlebar).into();
 //!
 //! // In your update (with window_id from state, e.g. stored from window::open_events()):
 //! Message::Titlebar(TitlebarMessage::StartDrag) => window::drag(window_id),
@@ -26,6 +26,6 @@ pub mod style;
 pub mod titlebar;
 pub mod resize;
 
-pub use style::TitlebarStyle;
-pub use titlebar::{titlebar, TitlebarMessage, DEFAULT_TITLEBAR_HEIGHT};
+pub use style::{TitleAlignment, TitlebarStyle};
+pub use titlebar::{titlebar, titlebar_with_style, Titlebar, TitlebarMessage, DEFAULT_TITLEBAR_HEIGHT};
 pub use resize::{resize_handles, RESIZE_EDGE_SIZE, RESIZE_CORNER_SIZE};
