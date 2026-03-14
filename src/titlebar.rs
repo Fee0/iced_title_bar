@@ -4,7 +4,7 @@
 //! Also provides resize handles for borderless windows (edges and corners).
 
 use crate::style::{self, TitleAlignment};
-use iced::alignment::{Horizontal }; 
+use iced::alignment::Horizontal;
 use iced::mouse::Interaction;
 use iced::widget::svg::Handle as SvgHandle;
 use iced::widget::{button, column, container, mouse_area, row, svg, text};
@@ -327,7 +327,7 @@ fn minimize_handle() -> SvgHandle {
 /// SVG handle for the maximize icon: single square (expand to full screen). Shown when window is not maximized.
 fn maximize_handle() -> SvgHandle {
     const MAXIMIZE_SVG: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" width="10" height="10" shape-rendering="crispEdges">
-  <rect x="1" y="1" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1"/>
+  <rect x="0" y="0" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1"/>
 </svg>"#;
     SvgHandle::from_memory(MAXIMIZE_SVG.as_bytes().to_vec())
 }
