@@ -331,28 +331,28 @@ fn to_iced_alignment(a: TitleAlignment) -> Alignment {
 /// SVG handle for the minimize icon: a single horizontal line 10px wide (crisp 10×10 viewBox, 1px stroke).
 fn minimize_handle() -> SvgHandle {
     SvgHandle::from_memory(
-        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/minimize.svg")).to_vec(),
+        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/windows/minimize.svg")).to_vec(),
     )
 }
 
 /// SVG handle for the maximize icon: single square (expand to full screen). Shown when window is not maximized.
 fn maximize_handle() -> SvgHandle {
     SvgHandle::from_memory(
-        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/maximize.svg")).to_vec(),
+        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/windows/maximize.svg")).to_vec(),
     )
 }
 
 /// SVG handle for the restore icon: two overlapping squares (restore down). Shown when window is maximized.
 fn restore_handle() -> SvgHandle {
     SvgHandle::from_memory(
-        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/restore.svg")).to_vec(),
+        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/windows/restore.svg")).to_vec(),
     )
 }
 
 /// SVG handle for the close icon: an X (crisp 10×10, 1px stroke, butt caps to match reference).
 fn close_handle() -> SvgHandle {
     SvgHandle::from_memory(
-        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/close.svg")).to_vec(),
+        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/svg/windows/close.svg")).to_vec(),
     )
 }
 
