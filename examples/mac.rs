@@ -28,6 +28,7 @@ struct State {
     style_preset: TitlebarStylePreset,
     is_maximized: bool,
     light_diameter: f32,
+    icon_spacing: f32,
 }
 
 impl Default for State {
@@ -41,6 +42,7 @@ impl Default for State {
             style_preset: TitlebarStylePreset::default(),
             is_maximized: false,
             light_diameter: 18.0,
+            icon_spacing: 8.0,
         }
     }
 }
@@ -56,6 +58,7 @@ enum Message {
     TitleAlignmentChanged(TitleAlignment),
     StylePresetChanged(TitlebarStylePreset),
     LightDiameterChanged(f32),
+    IconSpacingChanged(f32),
 }
 
 fn subscription(_state: &State) -> Subscription<Message> {
@@ -116,6 +119,10 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
             state.light_diameter = d;
             Task::none()
         }
+        Message::IconSpacingChanged(s) => {
+            state.icon_spacing = s;
+            Task::none()
+        }
     }
 }
 
@@ -139,6 +146,14 @@ fn view(state: &State) -> Element<'_, Message> {
     .size(14);
     let light_slider =
         slider(8.0..=32.0, state.light_diameter, Message::LightDiameterChanged).width(200);
+
+    let icon_spacing_label = text(format!(
+        "Icon spacing (traffic lights): {:.1} px",
+        state.icon_spacing
+    ))
+    .size(14);
+    let icon_spacing_slider =
+        slider(0.0..=24.0, state.icon_spacing, Message::IconSpacingChanged).width(200);
 
     let alignment_options = [
         TitleAlignment::Left,
@@ -174,6 +189,9 @@ fn view(state: &State) -> Element<'_, Message> {
         row![light_label, light_slider]
             .spacing(8)
             .align_y(Alignment::Center),
+        row![icon_spacing_label, icon_spacing_slider]
+            .spacing(8)
+            .align_y(Alignment::Center),
         row![text("Title alignment:").size(14), alignment_pick,]
             .spacing(8)
             .align_y(Alignment::Center),
@@ -201,6 +219,7 @@ fn view(state: &State) -> Element<'_, Message> {
         .title_alignment(state.title_alignment)
         .maximized(state.is_maximized)
         .light_diameter(state.light_diameter)
+        .icon_spacing(state.icon_spacing)
         .style(style)
         .with_content(config_panel, Message::Resize);
 

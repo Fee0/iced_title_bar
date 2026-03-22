@@ -41,6 +41,8 @@ pub struct TrafficLightsTitlebar<'a, Message> {
     pub is_maximized: bool,
     /// Circle diameter for each traffic light SVG (logical pixels).
     pub light_diameter: f32,
+    /// Horizontal spacing between the three traffic lights.
+    pub icon_spacing: f32,
     pub resize_edge_size: Option<f32>,
     pub on_message: Option<Box<dyn Fn(TitlebarMessage) -> Message + 'a>>,
 }
@@ -54,6 +56,7 @@ impl<'a, Message> std::fmt::Debug for TrafficLightsTitlebar<'a, Message> {
             .field("title_alignment", &self.title_alignment)
             .field("is_maximized", &self.is_maximized)
             .field("light_diameter", &self.light_diameter)
+            .field("icon_spacing", &self.icon_spacing)
             .field("resize_edge_size", &self.resize_edge_size)
             .field("on_message", &self.on_message.is_some())
             .finish()
@@ -69,6 +72,7 @@ pub fn traffic_lights_titlebar<Message>(title: impl ToString) -> TrafficLightsTi
         title_alignment: TitleAlignment::default(),
         is_maximized: false,
         light_diameter: TRAFFIC_LIGHT_DIAMETER,
+        icon_spacing: TRAFFIC_LIGHT_SPACING,
         resize_edge_size: None,
         on_message: None,
     }
@@ -86,6 +90,7 @@ impl<'a, Message> TrafficLightsTitlebar<'a, Message> {
             title_alignment: self.title_alignment,
             is_maximized: self.is_maximized,
             light_diameter: self.light_diameter,
+            icon_spacing: self.icon_spacing,
             resize_edge_size: self.resize_edge_size,
             on_message: Some(Box::new(f)),
         }
@@ -121,6 +126,12 @@ impl<'a, Message> TrafficLightsTitlebar<'a, Message> {
         self.light_diameter = diameter.clamp(4.0, 64.0);
         self
     }
+
+    /// Sets horizontal spacing between the three traffic lights.
+    pub fn icon_spacing(mut self, spacing: f32) -> Self {
+        self.icon_spacing = spacing.clamp(0.0, 64.0);
+        self
+    }
 }
 
 impl<'a, Message> From<TrafficLightsTitlebar<'a, Message>> for Element<'a, Message>
@@ -138,6 +149,7 @@ where
             value.title_alignment,
             value.is_maximized,
             value.light_diameter,
+            value.icon_spacing,
             on_message,
         )
     }
@@ -173,6 +185,7 @@ fn build_traffic_lights_titlebar_element<'a, Message>(
     title_alignment: TitleAlignment,
     #[allow(unused_variables)] is_maximized: bool,
     light_diameter: f32,
+    icon_spacing: f32,
     to_message: Box<dyn Fn(TitlebarMessage) -> Message + 'a>,
 ) -> Element<'a, Message>
 where
@@ -214,7 +227,7 @@ where
         .height(Length::Fill);
 
     let lights_row = row![close_btn, min_btn, max_btn]
-        .spacing(TRAFFIC_LIGHT_SPACING)
+        .spacing(icon_spacing)
         .align_y(Alignment::Center)
         .height(Length::Fill);
 

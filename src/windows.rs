@@ -19,7 +19,7 @@ pub const DEFAULT_ICON_WIDTH: f32 = 45.0;
 /// Custom titlebar widget: draggable title area + minimize, maximize, close buttons.
 ///
 /// Build with [titlebar](titlebar)(title), then chain [on_message](Titlebar::on_message), [style](Titlebar::style), [height](Titlebar::height),
-/// [title_alignment](Titlebar::title_alignment), [resize_edge](Titlebar::resize_edge), [maximized](Titlebar::maximized). Call [.into()](Into::into) to get an `Element`,
+/// [title_alignment](Titlebar::title_alignment), [resize_edge](Titlebar::resize_edge), [maximized](Titlebar::maximized), [icon_spacing](Titlebar::icon_spacing). Call [.into()](Into::into) to get an `Element`,
 /// or [with_content](Titlebar::with_content) to stack the bar with content and wrap everything in resize handles.
 /// You must call [on_message](Titlebar::on_message) for the bar to be interactive.
 /// Pass the current window maximized state via [maximized](Titlebar::maximized) so the middle button shows the correct icon (maximize vs restore).
@@ -38,6 +38,8 @@ pub struct Titlebar<'a, Message> {
     /// Optional resize edge thickness (in pixels) for integrated resize handles.
     /// When None, the default [RESIZE_EDGE_SIZE] is used.
     pub resize_edge_size: Option<f32>,
+    /// Horizontal spacing between the minimize, maximize, and close buttons only (not the title).
+    pub icon_spacing: f32,
     /// Callback to convert [TitlebarMessage] into your app's `Message`. Required for interaction.
     pub on_message: Option<Box<dyn Fn(TitlebarMessage) -> Message + 'a>>,
 }
@@ -50,6 +52,7 @@ impl<'a, Message> std::fmt::Debug for Titlebar<'a, Message> {
             .field("height", &self.height)
             .field("title_alignment", &self.title_alignment)
             .field("is_maximized", &self.is_maximized)
+            .field("icon_spacing", &self.icon_spacing)
             .field("on_message", &self.on_message.is_some())
             .finish()
     }
@@ -74,6 +77,7 @@ pub fn titlebar<Message>(title: impl ToString) -> Titlebar<'static, Message> {
         title_alignment: TitleAlignment::default(),
         is_maximized: false,
         resize_edge_size: None,
+        icon_spacing: 0.0,
         on_message: None,
     }
 }
@@ -91,6 +95,7 @@ impl<'a, Message> Titlebar<'a, Message> {
             title_alignment: self.title_alignment,
             is_maximized: self.is_maximized,
             resize_edge_size: self.resize_edge_size,
+            icon_spacing: self.icon_spacing,
             on_message: Some(Box::new(f)),
         }
     }
@@ -126,6 +131,12 @@ impl<'a, Message> Titlebar<'a, Message> {
         self.is_maximized = value;
         self
     }
+
+    /// Sets horizontal spacing between the three window-control icons (minimize, maximize, close).
+    pub fn icon_spacing(mut self, spacing: f32) -> Self {
+        self.icon_spacing = spacing.clamp(0.0, 64.0);
+        self
+    }
 }
 
 impl<'a, Message> From<Titlebar<'a, Message>> for Element<'a, Message>
@@ -142,6 +153,7 @@ where
             value.height,
             value.title_alignment,
             value.is_maximized,
+            value.icon_spacing,
             to_message,
         )
     }
@@ -180,6 +192,7 @@ fn build_titlebar_element<'a, Message>(
     height: f32,
     title_alignment: TitleAlignment,
     is_maximized: bool,
+    icon_spacing: f32,
     to_message: Box<dyn Fn(TitlebarMessage) -> Message + 'a>,
 ) -> Element<'a, Message>
 where
@@ -252,7 +265,13 @@ where
         .width(DEFAULT_ICON_WIDTH)
         .height(Length::Fill);
 
-    let row = row![draggable, min_btn, max_btn, close_btn]
+    let controls = row![min_btn, max_btn, close_btn]
+        .spacing(icon_spacing)
+        .height(Length::Fill)
+        .align_y(Alignment::Center);
+
+    let row = row![draggable, controls]
+        .spacing(0)
         .height(height)
         .align_y(Alignment::Center);
 
@@ -272,6 +291,7 @@ pub fn titlebar_with_style<'a, Message>(
     style: style::TitlebarStyle,
     title_alignment: TitleAlignment,
     is_maximized: bool,
+    icon_spacing: f32,
 ) -> Element<'a, Message>
 where
     Message: Clone + 'a + 'static,
@@ -282,6 +302,7 @@ where
         DEFAULT_TITLEBAR_HEIGHT,
         title_alignment,
         is_maximized,
+        icon_spacing,
         Box::new(to_message),
     )
 }

@@ -27,6 +27,7 @@
 //! let bar = traffic_lights_titlebar("My App")
 //!     .maximized(is_maximized)
 //!     .light_diameter(18.0)
+//!     .icon_spacing(8.0)
 //!     .on_message(Message::Titlebar)
 //!     .into();
 //! // Same TitlebarMessage mapping as above in `update`.

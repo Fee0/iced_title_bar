@@ -27,6 +27,7 @@ struct State {
     title_alignment: TitleAlignment,
     style_preset: TitlebarStylePreset,
     is_maximized: bool,
+    icon_spacing: f32,
 }
 
 impl Default for State {
@@ -39,6 +40,7 @@ impl Default for State {
             title_alignment: TitleAlignment::default(),
             style_preset: TitlebarStylePreset::default(),
             is_maximized: false,
+            icon_spacing: 0.0,
         }
     }
 }
@@ -53,6 +55,7 @@ enum Message {
     ResizeEdgeChanged(f32),
     TitleAlignmentChanged(TitleAlignment),
     StylePresetChanged(TitlebarStylePreset),
+    IconSpacingChanged(f32),
 }
 
 fn subscription(_state: &State) -> Subscription<Message> {
@@ -109,6 +112,10 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
             state.style_preset = preset;
             Task::none()
         }
+        Message::IconSpacingChanged(s) => {
+            state.icon_spacing = s;
+            Task::none()
+        }
     }
 }
 
@@ -124,6 +131,14 @@ fn view(state: &State) -> Element<'_, Message> {
     let resize_label = text(format!("Resize edge: {:.1} px", state.resize_edge)).size(14);
     let resize_slider =
         slider(0.0..=10.0, state.resize_edge, Message::ResizeEdgeChanged).width(200);
+
+    let icon_spacing_label = text(format!(
+        "Icon spacing (min/max/close): {:.1} px",
+        state.icon_spacing
+    ))
+    .size(14);
+    let icon_spacing_slider =
+        slider(0.0..=24.0, state.icon_spacing, Message::IconSpacingChanged).width(200);
 
     let alignment_options = [
         TitleAlignment::Left,
@@ -156,6 +171,9 @@ fn view(state: &State) -> Element<'_, Message> {
         row![resize_label, resize_slider]
             .spacing(8)
             .align_y(Alignment::Center),
+        row![icon_spacing_label, icon_spacing_slider]
+            .spacing(8)
+            .align_y(Alignment::Center),
         row![text("Title alignment:").size(14), alignment_pick,]
             .spacing(8)
             .align_y(Alignment::Center),
@@ -182,6 +200,7 @@ fn view(state: &State) -> Element<'_, Message> {
         .resize_edge(state.resize_edge)
         .title_alignment(state.title_alignment)
         .maximized(state.is_maximized)
+        .icon_spacing(state.icon_spacing)
         .style(style)
         .with_content(config_panel, Message::Resize);
 
