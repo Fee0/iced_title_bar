@@ -8,10 +8,10 @@ pub use crate::common::{
 };
 
 use crate::common::{draggable_title_area, surround_with_resize_edges};
-use crate::style::{self, TitleAlignment};
+use crate::style;
 use iced::alignment::Horizontal;
 use iced::widget::svg::Handle as SvgHandle;
-use iced::widget::{button, container, row, svg, text};
+use iced::widget::{button, container, row, svg};
 use iced::{Alignment, Element, Length};
 
 /// Default width in logical pixels for each minimize / maximize / close button hit target.
@@ -19,25 +19,21 @@ pub const TITLEBAR_WINDOWS_CONTROL_WIDTH: f32 = 45.0;
 
 /// Custom titlebar widget: draggable title area + minimize, maximize, close buttons.
 ///
-/// Build with [titlebar_windows](titlebar_windows)(title), then chain [on_message](TitleBarWindows::on_message), [style](TitleBarWindows::style), [height](TitleBarWindows::height),
-/// [title_alignment](TitleBarWindows::title_alignment), [resize_edge](TitleBarWindows::resize_edge), [maximized](TitleBarWindows::maximized), [icon_spacing](TitleBarWindows::icon_spacing). Call [.into()](Into::into) to get an `Element`,
-/// or [with_content](TitleBarWindows::with_content) to stack the bar with content and wrap everything in resize handles.
-/// You must call [on_message](TitleBarWindows::on_message) for the bar to be interactive.
-/// Pass the current window maximized state via [maximized](TitleBarWindows::maximized) so the middle button shows the correct icon (maximize vs restore).
+/// Build with [titlebar_windows](titlebar_windows)(title), then chain [on_message](TitleBarWindows::on_message),
+/// [style](TitleBarWindows::style), [height](TitleBarWindows::height), [resize_edge](TitleBarWindows::resize_edge),
+/// [maximized](TitleBarWindows::maximized), [icon_spacing](TitleBarWindows::icon_spacing). Call [.into()](Into::into)
+/// to get an `Element`, or [with_content](TitleBarWindows::with_content) to stack the bar with content and wrap
+/// everything in resize handles. You must call [on_message](TitleBarWindows::on_message) for the bar to be interactive.
 pub struct TitleBarWindows<'a, Message, Theme = iced::Theme> {
-    /// Title text shown in the draggable area.
-    pub title: String,
+    /// Element shown in the draggable title area. Can be any iced widget (text, row, image, …).
+    pub title: Element<'a, Message, Theme, iced::Renderer>,
     /// Visual style (bar/button colors, icon color).
     pub style: style::TitlebarStyle,
     /// Height of the bar in pixels.
     pub height: f32,
-    /// Horizontal alignment of the title text (left, center, right).
-    pub title_alignment: TitleAlignment,
     /// Whether the window is currently maximized. When true, the middle button shows the restore icon; otherwise the maximize icon.
-    /// Track this in app state (e.g. toggle on [ToggleMaximize](TitlebarMessage::ToggleMaximize)) or use [iced::window::is_maximized](https://docs.rs/iced/latest/iced/window/fn.is_maximized.html).
     pub is_maximized: bool,
     /// Optional resize edge thickness (in pixels) for integrated resize handles.
-    /// When None, the default [RESIZE_EDGE_SIZE] is used.
     pub resize_edge_size: Option<f32>,
     /// Horizontal spacing between the minimize, maximize, and close buttons only (not the title).
     pub icon_spacing: f32,
@@ -49,10 +45,9 @@ pub struct TitleBarWindows<'a, Message, Theme = iced::Theme> {
 impl<'a, Message, Theme> std::fmt::Debug for TitleBarWindows<'a, Message, Theme> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TitleBarWindows")
-            .field("title", &self.title)
+            .field("title", &"<Element>")
             .field("style", &self.style)
             .field("height", &self.height)
-            .field("title_alignment", &self.title_alignment)
             .field("is_maximized", &self.is_maximized)
             .field("icon_spacing", &self.icon_spacing)
             .field("on_message", &self.on_message.is_some())
@@ -60,25 +55,16 @@ impl<'a, Message, Theme> std::fmt::Debug for TitleBarWindows<'a, Message, Theme>
     }
 }
 
-/// Creates a new [TitleBarWindows] with the given title and default style/height. Call [.on_message()](TitleBarWindows::on_message) and then [.into()](Into::into) to build the element.
-///
-/// # Example
-///
-/// ```
-/// # use iced_custom_titlebar::{titlebar_windows, TitlebarMessage};
-/// # use iced::Element;
-/// # #[derive(Clone)]
-/// # enum Message { Titlebar(TitlebarMessage) }
-/// let _bar: Element<'_, Message> = titlebar_windows("My App").on_message(Message::Titlebar).into();
-/// ```
-pub fn titlebar_windows<Message, Theme>(
-    title: impl ToString,
-) -> TitleBarWindows<'static, Message, Theme> {
+/// Creates a new [TitleBarWindows] with the given title element and default style/height.
+/// Pass any iced `Element` (or anything that converts `Into<Element>`) as the title.
+/// Call [.on_message()](TitleBarWindows::on_message) and then [.into()](Into::into) to build the element.
+pub fn titlebar_windows<'a, Message, Theme>(
+    title: impl Into<Element<'a, Message, Theme, iced::Renderer>>,
+) -> TitleBarWindows<'a, Message, Theme> {
     TitleBarWindows {
-        title: title.to_string(),
+        title: title.into(),
         style: style::TitlebarStyle::default(),
         height: DEFAULT_TITLEBAR_HEIGHT,
-        title_alignment: TitleAlignment::default(),
         is_maximized: false,
         resize_edge_size: None,
         icon_spacing: 0.0,
@@ -89,24 +75,12 @@ pub fn titlebar_windows<Message, Theme>(
 
 impl<'a, Message, Theme> TitleBarWindows<'a, Message, Theme> {
     /// Sets the callback that maps [TitlebarMessage] to your app's `Message`. Required for drag/button interaction.
-    pub fn on_message<'b, F>(self, f: F) -> TitleBarWindows<'b, Message, Theme>
-    where
-        F: Fn(TitlebarMessage) -> Message + 'b,
-    {
-        TitleBarWindows {
-            title: self.title,
-            style: self.style,
-            height: self.height,
-            title_alignment: self.title_alignment,
-            is_maximized: self.is_maximized,
-            resize_edge_size: self.resize_edge_size,
-            icon_spacing: self.icon_spacing,
-            on_message: Some(Box::new(f)),
-            _theme: std::marker::PhantomData,
-        }
+    pub fn on_message(mut self, f: impl Fn(TitlebarMessage) -> Message + 'a) -> Self {
+        self.on_message = Some(Box::new(f));
+        self
     }
 
-    /// Sets the full [TitlebarStyle] (bar/button colors, border, icon color, title alignment).
+    /// Sets the full [TitlebarStyle] (bar/button colors, border, icon color).
     pub fn style(mut self, s: style::TitlebarStyle) -> Self {
         self.style = s;
         self
@@ -125,14 +99,7 @@ impl<'a, Message, Theme> TitleBarWindows<'a, Message, Theme> {
         self
     }
 
-    /// Sets the horizontal alignment of the title text (left, center, right).
-    pub fn title_alignment(mut self, a: TitleAlignment) -> Self {
-        self.title_alignment = a;
-        self
-    }
-
     /// Sets whether the window is currently maximized. When true, the middle button shows the restore icon (two overlapping squares); otherwise the maximize icon (single square).
-    /// Track this in your app state (e.g. flip on [ToggleMaximize](TitlebarMessage::ToggleMaximize)) or sync from [iced::window::is_maximized](https://docs.rs/iced/latest/iced/window/fn.is_maximized.html).
     pub fn maximized(mut self, value: bool) -> Self {
         self.is_maximized = value;
         self
@@ -149,21 +116,19 @@ impl<'a, Message, Theme> From<TitleBarWindows<'a, Message, Theme>>
     for Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
-    Theme: button::Catalog + container::Catalog + svg::Catalog + text::Catalog + 'static,
+    Theme: button::Catalog + container::Catalog + svg::Catalog + 'static,
     <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
     <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
     <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
-    <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
     fn from(value: TitleBarWindows<'a, Message, Theme>) -> Self {
         let to_message = value.on_message.expect(
-            "titlebar_windows: on_message must be set before converting to Element (e.g. titlebar_windows(\"App\").on_message(Message::Titlebar).into())",
+            "titlebar_windows: on_message must be set before converting to Element (e.g. titlebar_windows(text(\"App\")).on_message(Message::Titlebar).into())",
         );
         build_titlebar_windows_element(
             value.title,
             value.style,
             value.height,
-            value.title_alignment,
             value.is_maximized,
             value.icon_spacing,
             to_message,
@@ -174,11 +139,11 @@ where
 impl<'a, Message, Theme> TitleBarWindows<'a, Message, Theme>
 where
     Message: Clone + 'a + 'static,
-    Theme: button::Catalog + container::Catalog + svg::Catalog + text::Catalog + 'static,
+    Theme:
+        button::Catalog + container::Catalog + svg::Catalog + iced::widget::text::Catalog + 'static,
     <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
     <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
     <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
-    <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
     /// Builds a layout with this titlebar on top of `content`, wrapped in resize handles.
     ///
@@ -198,23 +163,21 @@ where
 
 /// Builds a custom titlebar element. Used by [From] and [titlebar_windows_with_style].
 fn build_titlebar_windows_element<'a, Message, Theme>(
-    title_str: String,
+    title: Element<'a, Message, Theme, iced::Renderer>,
     style: style::TitlebarStyle,
     height: f32,
-    title_alignment: TitleAlignment,
     is_maximized: bool,
     icon_spacing: f32,
     to_message: Box<dyn Fn(TitlebarMessage) -> Message + 'a>,
 ) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
-    Theme: button::Catalog + container::Catalog + svg::Catalog + text::Catalog + 'static,
+    Theme: button::Catalog + container::Catalog + svg::Catalog + 'static,
     <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
     <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
     <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
-    <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
-    let draggable = draggable_title_area(title_str, style, title_alignment, &*to_message);
+    let draggable = draggable_title_area(title, &*to_message);
 
     let s_min = style;
     let s_max = style;
@@ -301,26 +264,23 @@ where
 ///
 /// Prefer the builder form: `titlebar_windows(title).style(style).maximized(is_maximized).on_message(to_message).into()`.
 pub fn titlebar_windows_with_style<'a, Message, Theme>(
-    title: impl ToString,
+    title: impl Into<Element<'a, Message, Theme, iced::Renderer>>,
     to_message: impl Fn(TitlebarMessage) -> Message + 'a,
     style: style::TitlebarStyle,
-    title_alignment: TitleAlignment,
     is_maximized: bool,
     icon_spacing: f32,
 ) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
-    Theme: button::Catalog + container::Catalog + svg::Catalog + text::Catalog + 'static,
+    Theme: button::Catalog + container::Catalog + svg::Catalog + 'static,
     <Theme as button::Catalog>::Class<'a>: From<button::StyleFn<'a, Theme>>,
     <Theme as container::Catalog>::Class<'a>: From<container::StyleFn<'a, Theme>>,
     <Theme as svg::Catalog>::Class<'a>: From<svg::StyleFn<'a, Theme>>,
-    <Theme as text::Catalog>::Class<'a>: From<text::StyleFn<'a, Theme>>,
 {
     build_titlebar_windows_element(
-        title.to_string(),
+        title.into(),
         style,
         DEFAULT_TITLEBAR_HEIGHT,
-        title_alignment,
         is_maximized,
         icon_spacing,
         Box::new(to_message),

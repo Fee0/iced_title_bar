@@ -1,36 +1,13 @@
 //! Titlebar and window chrome styling.
-//!
-//! Centralizes colors for the titlebar bar, default button background, min/max hover, close hover, and icon color.
 
 use iced::Color;
 use iced::widget::button::{self, Status as ButtonStatus};
 
-/// Horizontal alignment of the title text inside the titlebar draggable area.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum TitleAlignment {
-    /// Title aligned to the left.
-    Left,
-    /// Title centered (default).
-    #[default]
-    Center,
-    /// Title aligned to the right.
-    Right,
-}
-
-impl std::fmt::Display for TitleAlignment {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TitleAlignment::Left => write!(f, "Left"),
-            TitleAlignment::Center => write!(f, "Center"),
-            TitleAlignment::Right => write!(f, "Right"),
-        }
-    }
-}
-
-/// Style for the titlebar and its buttons: hover colors, icon color, title font color.
+/// Style for the titlebar and its buttons.
 ///
 /// The titlebar background is transparent by default (`background: None`) so it inherits the
 /// active theme's window background. Set `background` to `Some(color)` to paint a solid bar.
+/// The title area accepts any iced `Element`, so text color and layout are the caller's responsibility.
 #[derive(Debug, Clone, Copy)]
 pub struct TitlebarStyle {
     /// Background color of the titlebar strip. `None` = transparent (inherits window background).
@@ -39,12 +16,10 @@ pub struct TitlebarStyle {
     pub button_hover: Color,
     /// Hover/pressed background for the close button.
     pub close_hover: Color,
-    /// Color for the SVG icons (minimize, maximize, close) and button text. SVGs use `currentColor` so they inherit this.
+    /// Color for the SVG icons (minimize, maximize, close). SVGs use `currentColor` so they inherit this.
     pub icon: Color,
-    /// Color of the border around the app (the resize-edge / drag region). The titlebar draws this border when using [TitleBarWindows::with_content](crate::windows::TitleBarWindows::with_content) or [TitleBarMac::with_content](crate::mac::TitleBarMac::with_content).
+    /// Color of the border around the app (the resize-edge / drag region). Used by [TitleBarWindows::with_content](crate::windows::TitleBarWindows::with_content) and [TitleBarMac::with_content](crate::mac::TitleBarMac::with_content).
     pub border: Color,
-    /// Color of the title text in the draggable area.
-    pub font_color: Color,
 }
 
 impl Default for TitlebarStyle {
@@ -88,7 +63,6 @@ impl TitlebarStyle {
                 close_hover: Color::from_rgb8(232, 17, 35),
                 icon: Color::from_rgb8(255, 255, 255),
                 border: Color::from_rgb8(52, 53, 56),
-                font_color: Color::from_rgb8(255, 255, 255),
             },
             TitlebarStylePreset::Light => TitlebarStyle {
                 background: None,
@@ -96,7 +70,6 @@ impl TitlebarStyle {
                 close_hover: Color::from_rgb8(232, 17, 35),
                 icon: Color::from_rgb8(0, 0, 0),
                 border: Color::from_rgb8(160, 160, 160),
-                font_color: Color::from_rgb8(0, 0, 0),
             },
         }
     }

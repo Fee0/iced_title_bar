@@ -1,9 +1,9 @@
 //! Shared titlebar types, resize handles, and layout helpers used by [crate::windows] and [crate::mac].
 
-use crate::style::{TitleAlignment, TitlebarStyle};
+use crate::style::TitlebarStyle;
 use iced::mouse::Interaction;
-use iced::widget::{column, container, mouse_area, row, text};
-use iced::{Alignment, Element, Length};
+use iced::widget::{column, container, mouse_area, row};
+use iced::{Element, Length};
 
 /// Messages emitted by custom titlebars. Map them in your app to [iced::window] tasks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -27,38 +27,19 @@ pub const RESIZE_EDGE_SIZE: f32 = 5.0;
 /// Size of corner resize handles (each side) in pixels.
 pub const RESIZE_CORNER_SIZE: f32 = 5.0;
 
-pub(crate) fn title_alignment_to_iced(a: TitleAlignment) -> Alignment {
-    match a {
-        TitleAlignment::Left => Alignment::Start,
-        TitleAlignment::Center => Alignment::Center,
-        TitleAlignment::Right => Alignment::End,
-    }
-}
-
 /// Draggable title strip: single press starts drag, double-click toggles maximize.
 pub(crate) fn draggable_title_area<'a, Message, Theme>(
-    title_str: String,
-    style: TitlebarStyle,
-    title_alignment: TitleAlignment,
+    title: Element<'a, Message, Theme, iced::Renderer>,
     to_message: &dyn Fn(TitlebarMessage) -> Message,
 ) -> Element<'a, Message, Theme, iced::Renderer>
 where
     Message: Clone + 'a + 'static,
-    Theme: container::Catalog + iced::widget::text::Catalog + 'static,
-    <Theme as iced::widget::text::Catalog>::Class<'a>: From<iced::widget::text::StyleFn<'a, Theme>>,
+    Theme: container::Catalog + 'static,
 {
-    let title_align = title_alignment_to_iced(title_alignment);
     container(
-        mouse_area(
-            container(text(title_str).size(14).color(style.font_color))
-                .padding(iced::Padding::from([8, 12]))
-                .width(Length::Fill)
-                .height(Length::Fill)
-                .align_x(title_align)
-                .align_y(Alignment::Center),
-        )
-        .on_press(to_message(TitlebarMessage::StartDrag))
-        .on_double_click(to_message(TitlebarMessage::ToggleMaximize)),
+        mouse_area(title)
+            .on_press(to_message(TitlebarMessage::StartDrag))
+            .on_double_click(to_message(TitlebarMessage::ToggleMaximize)),
     )
     .width(Length::Fill)
     .height(Length::Fill)
@@ -117,6 +98,7 @@ where
     Theme: container::Catalog + iced::widget::text::Catalog + 'static,
 {
     let resize_region = |direction: iced::window::Direction, width: Length, height: Length| {
+        use iced::widget::text;
         container(
             mouse_area(
                 container(text(" ").size(1))

@@ -8,9 +8,7 @@ use iced::widget::{
 };
 use iced::{Alignment, Element, Length, Padding, Subscription, Task};
 
-use iced_custom_titlebar::{
-    TitleAlignment, TitlebarMessage, TitlebarStyle, TitlebarStylePreset, titlebar_windows,
-};
+use iced_custom_titlebar::{TitlebarMessage, TitlebarStyle, TitlebarStylePreset, titlebar_windows};
 
 fn main() -> iced::Result {
     iced::application(State::default, update, view)
@@ -24,7 +22,6 @@ struct State {
     title: String,
     height: f32,
     resize_edge: f32,
-    title_alignment: TitleAlignment,
     style_preset: TitlebarStylePreset,
     is_maximized: bool,
     icon_spacing: f32,
@@ -37,7 +34,6 @@ impl Default for State {
             title: "Custom Titlebar Demo".to_string(),
             height: 32.0,
             resize_edge: 1.0,
-            title_alignment: TitleAlignment::default(),
             style_preset: TitlebarStylePreset::default(),
             is_maximized: false,
             icon_spacing: 0.0,
@@ -53,7 +49,6 @@ enum Message {
     TitleChanged(String),
     HeightChanged(f32),
     ResizeEdgeChanged(f32),
-    TitleAlignmentChanged(TitleAlignment),
     StylePresetChanged(TitlebarStylePreset),
     IconSpacingChanged(f32),
 }
@@ -104,10 +99,6 @@ fn update(state: &mut State, message: Message) -> Task<Message> {
             state.resize_edge = e;
             Task::none()
         }
-        Message::TitleAlignmentChanged(a) => {
-            state.title_alignment = a;
-            Task::none()
-        }
         Message::StylePresetChanged(preset) => {
             state.style_preset = preset;
             Task::none()
@@ -140,18 +131,6 @@ fn view(state: &State) -> Element<'_, Message> {
     let icon_spacing_slider =
         slider(0.0..=24.0, state.icon_spacing, Message::IconSpacingChanged).width(200);
 
-    let alignment_options = [
-        TitleAlignment::Left,
-        TitleAlignment::Center,
-        TitleAlignment::Right,
-    ];
-    let alignment_pick = pick_list(
-        alignment_options,
-        Some(state.title_alignment),
-        Message::TitleAlignmentChanged,
-    )
-    .width(120);
-
     let style_options = [TitlebarStylePreset::Dark, TitlebarStylePreset::Light];
     let style_pick = pick_list(
         style_options,
@@ -174,9 +153,6 @@ fn view(state: &State) -> Element<'_, Message> {
         row![icon_spacing_label, icon_spacing_slider]
             .spacing(8)
             .align_y(Alignment::Center),
-        row![text("Title alignment:").size(14), alignment_pick,]
-            .spacing(8)
-            .align_y(Alignment::Center),
         row![text("Style preset:").size(14), style_pick,]
             .spacing(8)
             .align_y(Alignment::Center),
@@ -194,11 +170,13 @@ fn view(state: &State) -> Element<'_, Message> {
         state.title.as_str()
     };
 
-    let with_handles: Element<'_, Message> = titlebar_windows(title_str)
+    // Pass any iced Element as the title — here a simple text widget.
+    let title_element: Element<'_, Message> = text(title_str).size(14).into();
+
+    let with_handles: Element<'_, Message> = titlebar_windows(title_element)
         .on_message(Message::Titlebar)
         .height(state.height)
         .resize_edge(state.resize_edge)
-        .title_alignment(state.title_alignment)
         .maximized(state.is_maximized)
         .icon_spacing(state.icon_spacing)
         .style(style)
