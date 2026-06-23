@@ -18,9 +18,6 @@ pub const TITLEBAR_MAC_LIGHT_DIAMETER: f32 = 18.0;
 /// Horizontal gap between traffic light circles.
 pub const TITLEBAR_MAC_LIGHT_SPACING: f32 = 8.0;
 
-/// Left padding before the first traffic light.
-pub const TITLEBAR_MAC_LIGHTS_LEFT_PADDING: f32 = 10.0;
-
 /// Default hit-target size when using [TitleBarMac::light_diameter] / [default_titlebar_mac_light_hit].
 pub const TITLEBAR_MAC_LIGHT_HIT: f32 = 36.0;
 
@@ -77,7 +74,7 @@ pub fn titlebar_mac<'a, Message, Theme>(
         height: DEFAULT_TITLEBAR_HEIGHT,
         is_maximized: false,
         light_diameter: TITLEBAR_MAC_LIGHT_DIAMETER,
-        icon_spacing: TITLEBAR_MAC_LIGHT_SPACING,
+        icon_spacing: 0.0,
         controls_side: ControlsSide::Left,
         resize_edge_size: None,
         on_message: None,
@@ -258,13 +255,7 @@ where
         .align_y(Alignment::Center)
         .height(Length::Fill);
 
-    let lights_padding = if controls_side == ControlsSide::Left {
-        iced::Padding::default().left(TITLEBAR_MAC_LIGHTS_LEFT_PADDING)
-    } else {
-        iced::Padding::default().right(TITLEBAR_MAC_LIGHTS_LEFT_PADDING)
-    };
     let lights_block = container(lights_row)
-        .padding(lights_padding)
         .height(Length::Fill)
         .align_y(Alignment::Center);
 

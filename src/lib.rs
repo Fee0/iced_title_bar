@@ -46,7 +46,7 @@ pub use common::{
 };
 pub use mac::{
     TITLEBAR_MAC_LIGHT_DIAMETER, TITLEBAR_MAC_LIGHT_HIT, TITLEBAR_MAC_LIGHT_SPACING,
-    TITLEBAR_MAC_LIGHTS_LEFT_PADDING, TitleBarMac, default_titlebar_mac_light_hit, titlebar_mac,
+    TitleBarMac, default_titlebar_mac_light_hit, titlebar_mac,
     titlebar_mac_with_style,
 };
 pub use style::{ControlsSide, TitlebarStyle, TitlebarStylePreset};

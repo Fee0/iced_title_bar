@@ -38,7 +38,7 @@ impl Default for State {
             style_preset: TitlebarStylePreset::default(),
             is_maximized: false,
             light_diameter: 18.0,
-            icon_spacing: 8.0,
+            icon_spacing: 0.0,
         }
     }
 }
